@@ -6,7 +6,20 @@
 `ttp229`
 ================================================================================
 
-TonTouch TTP229 hardware driver for CircuitPython.
+TonTouch TTP229 hardware driver for CircuitPython. Can detect up to 16 channels of touch input over
+a specialized 2-pin serial interface.
+
+If using a Raspberry Pi Pico series microcontroller (RP2040/RP235x), this module will utilize a PIO
+state machine to read data from the TTP229 efficiently. Otherwise, it will use basic digitalio
+bit-banging to control the clock pin and read data over the serial interface.
+
+To use this module, the TTP229 must be configured for 2-wire serial interface mode (not I2C). It can
+support either 8-key or 16-key mode and clock active-high/low depending on the parameters provided
+in the class constructor. By default, the module is configured for 16-key mode with an active-high
+clock.
+
+See the `device documentation <https://www.sunrom.com/download/SUNROM-TTP229-BSF_V1.1_EN.pdf>`_ for
+how best to configure your pins of the TTP229.
 
 
 * Author(s): Cooper Dalrymple
@@ -51,14 +64,60 @@ class Mode:
     """Enum-like class representing the possible modes of the TTP229."""
 
     KEY_8 = const(0)
+    """8-keys mode"""
 
     KEY_16 = const(1)
+    """16-keys mode"""
 
 
 class TTP229:
+    """Driver for the TTP229-BSF serial interface capacitive touch sensor. The states of each touch
+    input can be accessed after calling :func:`update` using the :attr:`data` value, the
+    :attr:`on_press` and :attr:`on_release` callbacks, or by treating the object as a list (see
+    example below).
+
+    .. code-block:: python
+
+        import board
+        import ttp229
+        ttp = ttp229.TTP229(board.GP0, board.GP1)
+        ttp.update()
+        for i in range(len(ttp)):
+            print("Touch input {:d} is {:s}".format(i, "on" if ttp[i] else "off")
+
+    :param sdo: Serial data pin
+    :param scl: Serial clock pin
+    :param mode: Key mode using a constant of the :class:`Mode` enum
+    :param invert_clk: If using an active-low clock, set this parameter to `True`
+    """
+
     on_press: Callable[[int], None] = None
+    """Callback which will be called when a press is detected during the :func:`update` method.
+    The callback must include 1 integer parameter for the index of the touch input.
+
+    .. code-block:: python
+
+        import board
+        import ttp229
+        ttp = ttp229.TTP229(board.GP0, board.GP1)
+        def pressed(index:int) -> None:
+            print("Touch input {:d} was pressed".format(index))
+        ttp.on_press = pressed
+    """
 
     on_release: Callable[[int], None] = None
+    """Callback which will be called when a release is detected during the :func:`update` method.
+    The callback must include 1 integer parameter for the index of the touch input.
+
+    .. code-block:: python
+
+        import board
+        import ttp229
+        ttp = ttp229.TTP229(board.GP0, board.GP1)
+        def released(index:int) -> None:
+            print("Touch input {:d} was released".format(index))
+        ttp.on_release = released
+    """
 
     def __init__(self, sdo: Pin, scl: Pin, mode: int = Mode.KEY_16, invert_clk: bool = False):
         self._data = array.array("H", [0, 0])
@@ -117,6 +176,7 @@ bitloop:
             self._scl.direction = digitalio.Direction.OUTPUT
 
     def update(self) -> bool:
+        """Update the touch input state."""
         if "rp2pio" in globals():
             if self._piosm.in_waiting <= 0:
                 return False
@@ -144,6 +204,7 @@ bitloop:
 
     @property
     def data(self) -> int:
+        """Return an integer with the state of each touch pad in binary-indexed format."""
         return self._data[0]
 
     def __getitem__(self, index: int) -> bool:
