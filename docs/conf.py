@@ -21,7 +21,7 @@ extensions = [
     "sphinx.ext.todo",
 ]
 
-autodoc_mock_imports = ["digitalio", "microcontroller"]
+autodoc_mock_imports = ["digitalio", "microcontroller", "rp2pio"]
 
 autodoc_preserve_defaults = True
 

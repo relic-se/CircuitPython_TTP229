@@ -4,5 +4,4 @@
 # SPDX-License-Identifier: MIT
 
 Adafruit-Blinka
-rp2pio
-adafruit_pioasm
+Adafruit-CircuitPyton-PIOASM
