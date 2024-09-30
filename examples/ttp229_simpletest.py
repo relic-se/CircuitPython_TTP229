@@ -10,7 +10,8 @@ import ttp229
 
 ttp = ttp229.TTP229(board.GP14, board.GP15, invert_clk=True)
 
+ttp.on_press = lambda i: print(f"Press: {i:d}")
+ttp.on_release = lambda i: print(f"Release: {i:d}")
+
 while True:
-    if ttp.update():
-        print(bin(ttp.data))
-    time.sleep(0.1)
+    ttp.update()

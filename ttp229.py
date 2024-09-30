@@ -41,6 +41,11 @@ try:
 except ImportError:
     import digitalio
 
+try:
+    from typing import Callable
+except ImportError:
+    pass
+
 
 class Mode:
     """Enum-like class representing the possible modes of the TTP229."""
@@ -51,8 +56,12 @@ class Mode:
 
 
 class TTP229:
+    on_press: Callable[[int], None] = None
+
+    on_release: Callable[[int], None] = None
+
     def __init__(self, sdo: Pin, scl: Pin, mode: int = Mode.KEY_16, invert_clk: bool = False):
-        self._data = array.array("H", [0])
+        self._data = array.array("H", [0, 0])
         self._mode = mode
         self._count = (mode + 1) * 8
         self._index = 0
@@ -111,7 +120,7 @@ bitloop:
         if "rp2pio" in globals():
             if self._piosm.in_waiting <= 0:
                 return False
-            self._piosm.readinto(self._data)
+            self._piosm.readinto(self._data, end=1)
         else:
             self._data[0] = 0
             self._scl.value = self._invert_clk
@@ -121,6 +130,16 @@ bitloop:
                     self._data[0] |= 1 << i
                 self._scl.value = self._invert_clk
             self._scl.value = not self._invert_clk
+
+        for i in range(self._count):
+            value = self._data[0] & (1 << i)
+            if value != self._data[1] & (1 << i):
+                if value and callable(self.on_press):
+                    self.on_press(i)
+                elif not value and callable(self.on_release):
+                    self.on_release(i)
+        self._data[1] = self._data[0]
+
         return True
 
     @property
