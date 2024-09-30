@@ -8,7 +8,7 @@ on: [pull_request, push]
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-lts-latest
     steps:
     - name: Run Build CI workflow
       uses: adafruit/workflows-circuitpython-libs/build@main
