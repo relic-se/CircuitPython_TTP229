@@ -212,7 +212,7 @@ bitloop:
 
     def __len__(self):
         return self._count
-    
+
     def deinit(self) -> None:
         """Deinitialize the TTP229 and releases any hardware resources for reuse."""
         if "rp2pio" in globals():
