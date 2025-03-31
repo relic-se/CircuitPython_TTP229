@@ -22,7 +22,7 @@ Introduction
     :target: https://github.com/astral-sh/ruff
     :alt: Code Style: Ruff
 
-TonTouch TTP229 hardware driver for CircuitPython.
+TonTouch TTP229 hardware driver for CircuitPython. The TTP229-BSF should be configured for 2 wire serial output interface in either 8 or 16 direct input key mode.
 
 
 Dependencies
